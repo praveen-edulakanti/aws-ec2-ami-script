@@ -41,13 +41,18 @@ for key in iam.list_users()['Users']:
 for key in user_list:
     print(format(key))
 
-csv_file = "IAM_ListExport.csv"
+csv_file = "IAM_UsersList.csv"
 csv_columns = ['SNo','UserName','UserId', 'Policies','Groups','isMFADeviceConfigured','Arn','CreateDate']
 try:
     with open(csv_file, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=csv_columns, lineterminator='\n')
         writer.writeheader()
         for data in user_list:
+            #Groups,Policies list changing to string and removing quotes
+            if type(data['Groups']) is list:
+                data['Groups'] = str(data['Groups'])[1:-1].replace("\'", ' ')
+            if type(data['Policies']) is list:
+                data['Policies'] = str(data['Policies'])[1:-1].replace("\'", ' ')
             writer.writerow(data)
 except IOError:
-    print("I/O error")    
+    print("I/O error")
