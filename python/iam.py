@@ -13,9 +13,25 @@ user_list = []
 cnt=0
 #print(dir(iam))
 #sys.exit(0)
-def LastActivity(user_name):
+def LastActivityConsole(user_name):
+    numOfDaysCon = ''
+    user = resource.User(user_name)
+    date_now = datetime.datetime.now()
+    # use the account creation date if the user has never logged in.
+    console_last_used = user.password_last_used or user.create_date
+    for k in user.access_keys.all():
+        key_used = iam.get_access_key_last_used(AccessKeyId=k.id) 
+        key_date = key_used['AccessKeyLastUsed']['LastUsedDate']
+        if key_date > console_last_used:
+            console_last_used = key_date
+    #print(console_last_used)
+    console_last_used = (date_now - console_last_used.replace(tzinfo=None)).days
+    numOfDaysCon = str(console_last_used) + " days"
+    return numOfDaysCon
+
+def LastActivityPrg(user_name):
     today = datetime.datetime.now()
-    final_report = ''
+    numOfDays = ''
     number = 1
 
     # Get Access Keys for the User
@@ -35,10 +51,10 @@ def LastActivity(user_name):
         if last_access is not None:
             delta = (today - last_access.replace(tzinfo=None)).days
             if delta >= 0:
-                final_report = str(delta) + " days"
+                numOfDays = str(delta) + " days"
                 number += 1
-    #print(final_report)
-    return final_report
+    #print(numOfDays)
+    return numOfDays
 
 for key in iam.list_users()['Users']:
     result = {}
@@ -68,9 +84,20 @@ for key in iam.list_users()['Users']:
 
     result['Arn']=key['Arn']
     result['CreateDate']=key['CreateDate']
-    LoginDaysBack=LastActivity(key['UserName'])
+
+    user = resource.User(key['UserName'])
+    if user.password_last_used:
+        LoginDaysBack = LastActivityConsole(key['UserName'])
+        #print(f"User {key['UserName']} has console access")
+    else:
+        LoginDaysBack=LastActivityPrg(key['UserName'])
+        #print(f"User {key['UserName']} has only programmatic access")
+
     if not len(LoginDaysBack):
-        LoginDaysBack = 'Never LoggedIn'
+        LoginDaysBack = 'None'
+
+    if LoginDaysBack=='0 days':
+        LoginDaysBack = 'Today'
 
     result['LastActivityDays']=LoginDaysBack
 
