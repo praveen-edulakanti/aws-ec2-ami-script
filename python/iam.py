@@ -14,19 +14,24 @@ cnt=0
 #print(dir(iam))
 #sys.exit(0)
 def LastActivityConsole(user_name):
-    numOfDaysCon = ''
-    user = resource.User(user_name)
-    date_now = datetime.datetime.now()
-    # use the account creation date if the user has never logged in.
-    console_last_used = user.password_last_used or user.create_date
-    for k in user.access_keys.all():
-        key_used = iam.get_access_key_last_used(AccessKeyId=k.id) 
-        key_date = key_used['AccessKeyLastUsed']['LastUsedDate']
-        if key_date > console_last_used:
-            console_last_used = key_date
-    #print(console_last_used)
-    console_last_used = (date_now - console_last_used.replace(tzinfo=None)).days
-    numOfDaysCon = str(console_last_used) + " days"
+    try:
+        numOfDaysCon = ''
+        user = resource.User(user_name)
+        date_now = datetime.datetime.now()
+        # use the account creation date if the user has never logged in.
+        console_last_used = user.password_last_used or user.create_date
+        for k in user.access_keys.all():
+            key_used = iam.get_access_key_last_used(AccessKeyId=k.id)
+            key_date = key_used['AccessKeyLastUsed']['LastUsedDate']
+            if key_date > console_last_used:
+                console_last_used = key_date
+                #print(console_last_used)
+        console_last_used = (date_now - console_last_used.replace(tzinfo=None)).days
+        numOfDaysCon = str(console_last_used) + " days"
+    except Exception as e:
+        #print("Execption::")
+        numOfDaysCon = LastActivityPrg(user_name)
+    
     return numOfDaysCon
 
 def LastActivityPrg(user_name):
@@ -98,6 +103,9 @@ for key in iam.list_users()['Users']:
 
     if LoginDaysBack=='0 days':
         LoginDaysBack = 'Today'
+
+    if LoginDaysBack=='1 days':
+        LoginDaysBack = 'Yesterday'    
 
     result['LastActivityDays']=LoginDaysBack
 
